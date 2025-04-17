@@ -28,6 +28,7 @@ export const TodoList: React.FC<Props> = ({
             })}
             key={todo.id}
           >
+            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
             <label className="todo__status-label">
               <input
                 data-cy="TodoStatus"

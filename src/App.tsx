@@ -1,43 +1,44 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useState } from 'react';
-import { USER_ID } from './api/todos';
+import React, { useEffect, useRef, useState } from 'react';
+import { getTodos } from './api/todos';
 import { Todo } from './types/Todo';
-import { client } from './utils/fetchClient';
-import { Header } from './components/Header/Header';
-import { TodoList } from './components/TodoList/TodoList';
-import { Footer } from './components/Footer/Footer';
-// eslint-disable-next-line max-len
-import { ErrorNotification } from './components/ErrorNotification/ErrorNotification';
+import { Header } from './components/Header';
+import { TodoList } from './components/TodoList';
+import { Footer } from './components/Footer';
+import { ErrorNotification } from './components/ErrorNotification';
 
-type ErrorType =
-  | 'TodosLoad'
-  | 'EmptyTitle'
-  | 'UnableToAddTodo'
-  | 'UnableToDeleteTodo'
-  | 'UnableToUpdateTodo';
+export enum ErrorType {
+  TodosLoad = 'Unable to load todos',
+  EmptyTitle = 'Title should not be empty',
+  UnableToAddTodo = 'Unable to add a todo',
+  UnableToDeleteTodo = 'Unable to delete a todo',
+  UnableToUpdateTodo = 'Unable to update a todo',
+}
+
+export enum Filter {
+  all = 'All',
+  active = 'Active',
+  completed = 'Completed',
+}
 
 export const App: React.FC = () => {
-  const [visibleTodos, setVisibleTodos] = useState<Todo[]>([]);
-  const [startingTodos, setStartingTodos] = useState<Todo[]>([]);
   const [isTodoEditing, setIsTodoEditing] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(0);
   const [currentError, setCurrentError] = useState<ErrorType | ''>('');
-  const [selectedFilter, setSelectedFilter] = useState('#/');
+  const [selectedFilter, setSelectedFilter] = useState(Filter.all);
+  const [todos, setTodos] = useState<Todo[]>([]);
+
+  const startingTodos = useRef<Todo[]>([]);
 
   useEffect(() => {
-    client
-      .get(`/todos?userId=${USER_ID}`)
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
-      .then((todos: Todo[]) => {
-        setVisibleTodos(todos);
-        setStartingTodos(todos);
+    getTodos()
+      .then((data: Todo[]) => {
+        setTodos(data);
+        startingTodos.current = data;
       })
       .catch(() => {
-        setCurrentError('TodosLoad');
-        // eslint-disable-next-line
-        console.warn('Error in loading todos');
+        setCurrentError(ErrorType.TodosLoad);
       });
   }, []);
 
@@ -53,25 +54,30 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [currentError]);
 
-  const handleTodoFiltering = (query: string) => {
-    if (query === 'all') {
-      setVisibleTodos(startingTodos);
-    }
+  useEffect(() => {
+    switch (selectedFilter) {
+      case Filter.all:
+        setTodos(startingTodos.current);
+        break;
 
-    if (query === 'active') {
-      setVisibleTodos(startingTodos.filter(todo => !todo.completed));
-    }
+      case Filter.active:
+        setTodos(startingTodos.current.filter(todo => !todo.completed));
+        break;
 
-    if (query === 'completed') {
-      setVisibleTodos(startingTodos.filter(todo => todo.completed));
-    }
-  };
+      case Filter.completed:
+        setTodos(startingTodos.current.filter(todo => todo.completed));
+        break;
 
-  const activeTodos: number = startingTodos.filter(
+      default:
+        setTodos(startingTodos.current);
+    }
+  }, [selectedFilter]);
+
+  const activeTodos: number = startingTodos.current.filter(
     (todo: Todo) => !todo.completed,
   ).length;
 
-  const completedTodos: number = startingTodos.filter(
+  const completedTodos: number = startingTodos.current.filter(
     (todo: Todo) => todo.completed,
   ).length;
 
@@ -80,21 +86,26 @@ export const App: React.FC = () => {
       <h1 className="todoapp__title">todos</h1>
 
       <div className="todoapp__content">
-        <Header startingTodos={startingTodos} completedTodos={completedTodos} />
+        <Header
+          startingTodos={startingTodos.current}
+          completedTodos={completedTodos}
+        />
         <TodoList
-          visibleTodos={visibleTodos}
+          visibleTodos={todos}
           isTodoEditing={isTodoEditing}
           selectedPostId={selectedPostId}
           setIsTodoEditing={setIsTodoEditing}
           setSelectedPostId={setSelectedPostId}
         />
-        <Footer
-          startingTodos={startingTodos}
-          activeTodos={activeTodos}
-          selectedFilter={selectedFilter}
-          setSelectedFilter={setSelectedFilter}
-          handleTodoFiltering={handleTodoFiltering}
-        />
+        {startingTodos && (
+          <Footer
+            startingTodos={startingTodos.current}
+            activeTodos={activeTodos}
+            selectedFilter={selectedFilter}
+            setSelectedFilter={setSelectedFilter}
+            completedTodos={completedTodos}
+          />
+        )}
       </div>
       <ErrorNotification
         currentError={currentError}
