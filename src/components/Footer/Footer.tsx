@@ -1,10 +1,8 @@
 import React from 'react';
 import classNames from 'classnames';
-import { Todo } from '../../types/Todo';
 import { Filter } from '../../App';
 
 type Props = {
-  startingTodos: Todo[];
   activeTodos: number;
   selectedFilter: string;
   setSelectedFilter: React.Dispatch<React.SetStateAction<Filter>>;
@@ -15,21 +13,14 @@ export const Footer: React.FC<Props> = ({
   selectedFilter,
   activeTodos,
   setSelectedFilter,
-  startingTodos,
   completedTodos,
 }) => {
   return (
-    <footer
-      className={classNames('todoapp__footer', {
-        'is-hidden': startingTodos.length === 0,
-      })}
-      data-cy="Footer"
-    >
+    <footer className="todoapp__footer" data-cy="Footer">
       <span className="todo-count" data-cy="TodosCounter">
         {activeTodos} items left
       </span>
 
-      {/* Active link should have the 'selected' class FILTERMB*/}
       <nav className="filter" data-cy="Filter">
         {Object.values(Filter).map((filter: Filter, index) => {
           return (
@@ -40,9 +31,7 @@ export const Footer: React.FC<Props> = ({
                 selected: selectedFilter === filter,
               })}
               data-cy={`FilterLink${filter}`}
-              onClick={() => {
-                setSelectedFilter(filter);
-              }}
+              onClick={() => setSelectedFilter(filter)}
             >
               {filter}
             </a>
@@ -50,7 +39,6 @@ export const Footer: React.FC<Props> = ({
         })}
       </nav>
 
-      {/* this button should be disabled if there are no completed todos */}
       <button
         type="button"
         className="todoapp__clear-completed"

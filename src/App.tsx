@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getTodos } from './api/todos';
 import { Todo } from './types/Todo';
 import { Header } from './components/Header';
@@ -29,14 +29,9 @@ export const App: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState(Filter.all);
   const [todos, setTodos] = useState<Todo[]>([]);
 
-  const startingTodos = useRef<Todo[]>([]);
-
   useEffect(() => {
     getTodos()
-      .then((data: Todo[]) => {
-        setTodos(data);
-        startingTodos.current = data;
-      })
+      .then(setTodos)
       .catch(() => {
         setCurrentError(ErrorType.TodosLoad);
       });
@@ -54,30 +49,11 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [currentError]);
 
-  useEffect(() => {
-    switch (selectedFilter) {
-      case Filter.all:
-        setTodos(startingTodos.current);
-        break;
-
-      case Filter.active:
-        setTodos(startingTodos.current.filter(todo => !todo.completed));
-        break;
-
-      case Filter.completed:
-        setTodos(startingTodos.current.filter(todo => todo.completed));
-        break;
-
-      default:
-        setTodos(startingTodos.current);
-    }
-  }, [selectedFilter]);
-
-  const activeTodos: number = startingTodos.current.filter(
+  const activeTodos: number = [...todos].filter(
     (todo: Todo) => !todo.completed,
   ).length;
 
-  const completedTodos: number = startingTodos.current.filter(
+  const completedTodos: number = [...todos].filter(
     (todo: Todo) => todo.completed,
   ).length;
 
@@ -86,20 +62,17 @@ export const App: React.FC = () => {
       <h1 className="todoapp__title">todos</h1>
 
       <div className="todoapp__content">
-        <Header
-          startingTodos={startingTodos.current}
-          completedTodos={completedTodos}
-        />
+        <Header todos={todos} completedTodos={completedTodos} />
         <TodoList
+          selectedFilter={selectedFilter}
           visibleTodos={todos}
           isTodoEditing={isTodoEditing}
           selectedPostId={selectedPostId}
           setIsTodoEditing={setIsTodoEditing}
           setSelectedPostId={setSelectedPostId}
         />
-        {startingTodos && (
+        {!!todos.length && (
           <Footer
-            startingTodos={startingTodos.current}
             activeTodos={activeTodos}
             selectedFilter={selectedFilter}
             setSelectedFilter={setSelectedFilter}

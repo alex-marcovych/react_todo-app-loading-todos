@@ -3,18 +3,18 @@ import classNames from 'classnames';
 import { Todo } from '../../types/Todo';
 
 type Props = {
-  startingTodos: Todo[];
+  todos: Todo[];
   completedTodos: number;
 };
 
-export const Header: React.FC<Props> = ({ startingTodos, completedTodos }) => {
+export const Header: React.FC<Props> = ({ todos, completedTodos }) => {
   return (
     <header className="todoapp__header">
       {/* this button should have `active` class only if all todos are completed */}
       <button
         type="button"
         className={classNames('todoapp__toggle-all', {
-          active: startingTodos.length === completedTodos,
+          active: todos.length === completedTodos,
         })}
         data-cy="ToggleAllButton"
       />
